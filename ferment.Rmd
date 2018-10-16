@@ -1,0 +1,100 @@
+---
+title: "Pre-lim results from Ferment! Eden residency"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Convert Kraken output into usable species abundance table
+
+```{r}
+library(tidyverse)
+library(stringi)
+```
+
+Get per sample outputs:
+```{r}
+setwd("~/Dropbox/CRISPR_Postdoc/Other_projects/Ferment/data/data/batch2/")
+list.files(path = ".")
+
+df1<-read.table("barcode01_all_test.txt", header = FALSE, sep = "\t")
+df2<-read.table("barcode02_all_test.txt", header = FALSE, sep = "\t")
+df3<-read.table("barcode03_all_test.txt", header = FALSE, sep = "\t")
+df4<-read.table("barcode04_all_test.txt", header = FALSE, sep = "\t")
+df5<-read.table("barcode05_all_test.txt", header = FALSE, sep = "\t")
+df6<-read.table("barcode06_all_test.txt", header = FALSE, sep = "\t")
+df7<-read.table("barcode07_all_test.txt", header = FALSE, sep = "\t")
+df8<-read.table("barcode08_all_test.txt", header = FALSE, sep = "\t")
+df9<-read.table("barcode09_all_test.txt", header = FALSE, sep = "\t")
+df10<-read.table("barcode10_all_test.txt", header = FALSE, sep = "\t")
+df11<-read.table("barcode11_all_test.txt", header = FALSE, sep = "\t")
+df12<-read.table("barcode12_all_test.txt", header = FALSE, sep = "\t")
+```
+
+# Label samples
+```{r}
+df1$sample<-"mouli_leaf"
+df2$sample<-"soy_broth"
+df3$sample<-"nukadoko"
+df4$sample<-"miso"
+df5$sample<-"kimchi_22C_6hr"
+df6$sample<-"kimchi_22C_9days"
+df7$sample<-"kimchi_22C_8days"
+df8$sample<-"kimchi_30C_6hr"
+df9$sample<-"negative_control"
+df10$sample<-"mouli_post_salt"
+df11$sample<-"mouli_pre_salt"
+df12$sample<-"kimchi_sauce"
+```
+
+# Collate
+```{r}
+df<-rbind.data.frame(df1, df2, df3, df4,df5,df6, df7, df8, df9, df10, df11, df12)
+
+# Lose column with additional info (no using it here)
+df<-df[,-5]
+head(df)
+colnames(df)<-c('classified', 'seq', 'taxa', 'length', 'sample')
+```
+
+# Sequence length distribution:
+```{r}
+ggplot(df, aes(length))+
+  geom_histogram( color = "black", fill = "white")+
+  xlab("Sequence Length")+
+  ylab("Count")+
+  theme_classic()
+```
+Amplicon should be 1500bp... 
+
+# Remove over amplicon size and tidy up
+```{r}
+df <- df %>%
+  filter(., length < 2000)
+df$group<-stri_extract_first_regex(df$taxa, "[A-Za-z]+")
+```
+
+# Tally up counts # Normalise by read length:
+```{r}
+df2<- df %>%
+  group_by(., sample) %>%
+  count(., group) %>%
+  group_by(sample) %>%
+  mutate(RA = n/sum(n))
+```
+
+# Plot:
+```{r fig1, fig.height = 8, fig.width = 12}
+df2 %>%
+  filter(., RA > 0.001) %>%
+  ggplot(., aes(group, RA))+
+  geom_bar( stat = "identity", aes(fill = group))+
+  theme_classic()+
+  xlab("Bacterial Group")+
+  ylab("Relative Abundance\n(Proportion of DNA sequences)")+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+  facet_wrap(~ sample, scales = "free")+
+  guides( fill = FALSE)
+```
