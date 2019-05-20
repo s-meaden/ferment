@@ -7,7 +7,7 @@ nanoQC feed_reads.fastq.gz
 
 # Trim first 5 bases from file (based on nanoQC plots)
 gunzip feed_reads.fastq.gz
-python  ~/Dropbox/Code/FASTA_manip/fasta_trimmer.py feed_reads.fastq.gz
+python  ~/Code/FASTA_manip/fasta_trimmer.py feed_reads.fastq.gz
 
 
 # In a rush at Eden so no QC. Rough overview. 
